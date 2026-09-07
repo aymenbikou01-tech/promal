@@ -6,18 +6,17 @@
     <title>{% block title %}Dashboard{% endblock %}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: #f5f7fa; color: #1a1a2e; min-height: 100vh; }
-        a { text-decoration: none; color: #4a6cf7; }
+        body { background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+        a { text-decoration: none; color: #58a6ff; }
         
-        /* Navbar */
+        /* Navbar Dark */
         .navbar {
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
             padding: 12px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -25,10 +24,10 @@
         .navbar .brand {
             font-size: 20px;
             font-weight: 700;
-            color: #1a1a2e;
+            color: #f0f6fc;
             letter-spacing: -0.5px;
         }
-        .navbar .brand span { color: #4a6cf7; }
+        .navbar .brand span { color: #58a6ff; }
         .navbar .nav-links {
             display: flex;
             gap: 28px;
@@ -36,23 +35,85 @@
         }
         .navbar .nav-links a {
             font-size: 14px;
-            color: #4a5568;
+            color: #8b949e;
             font-weight: 500;
             transition: 0.2s;
             padding: 6px 0;
             border-bottom: 2px solid transparent;
         }
-        .navbar .nav-links a:hover { color: #4a6cf7; border-bottom-color: #4a6cf7; }
-        .navbar .nav-links a.active { color: #4a6cf7; border-bottom-color: #4a6cf7; }
+        .navbar .nav-links a:hover { color: #f0f6fc; border-bottom-color: #58a6ff; }
+        .navbar .nav-links a.active { color: #f0f6fc; border-bottom-color: #58a6ff; }
         .navbar .nav-links .logout {
-            color: #e53e3e;
+            color: #f85149;
             border-color: transparent;
         }
-        .navbar .nav-links .logout:hover { color: #c53030; border-color: #e53e3e; }
+        .navbar .nav-links .logout:hover { color: #ff7b72; border-color: #f85149; }
         
         .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
         
-        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 25px; color: #1a1a2e; }
+        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 25px; color: #f0f6fc; }
+        
+        /* Dark mode components */
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .card-title { font-size: 16px; font-weight: 600; color: #f0f6fc; margin-bottom: 15px; }
+        
+        input, select, textarea {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #c9d1d9;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            transition: 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+        textarea { font-family: 'Courier New', monospace; resize: vertical; }
+        
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary { background: #238636; color: #fff; }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-danger { background: #da3633; color: #fff; }
+        .btn-danger:hover { background: #f85149; }
+        .btn-info { background: #1f6feb; color: #fff; }
+        .btn-info:hover { background: #388bfd; }
+        .btn-outline { background: transparent; border: 1px solid #30363d; color: #c9d1d9; }
+        .btn-outline:hover { background: #30363d; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 10px 12px; color: #8b949e; border-bottom: 2px solid #30363d; font-weight: 500; }
+        td { padding: 10px 12px; border-bottom: 1px solid #21262d; }
+        tr:hover td { background: #161b22; }
+        
+        .stat-box { background: #0d1117; padding: 15px; border-radius: 8px; border: 1px solid #30363d; text-align: center; }
+        .stat-box .num { font-size: 28px; font-weight: 700; }
+        .stat-box .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .stat-box .num.green { color: #3fb950; }
+        .stat-box .num.red { color: #f85149; }
+        .stat-box .num.blue { color: #58a6ff; }
+        .stat-box .num.white { color: #f0f6fc; }
+        
+        .progress-bar { width: 100%; height: 6px; background: #21262d; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #58a6ff, #1f6feb); border-radius: 10px; transition: width 0.5s; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 15px; }
+        
+        @media (max-width: 900px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
     </style>
     {% block extra_css %}{% endblock %}
 </head>

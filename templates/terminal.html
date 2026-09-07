@@ -2,19 +2,17 @@
 {% block title %}Terminal{% endblock %}
 {% block content %}
 <div class="page-title">Remote Terminal</div>
-<div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
-    <div style="flex:1; min-width:200px;">
-        <label style="display:block; font-size:13px; color:#4a5568; margin-bottom:4px;">Target Node</label>
-        <select id="botSelect" style="width:100%; padding:10px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; font-size:14px;">
-            <option value="">-- Select --</option>
-        </select>
-    </div>
+<div style="margin-bottom:20px;">
+    <label style="display:block; font-size:13px; color:#8b949e; margin-bottom:4px;">Target Node</label>
+    <select id="botSelect" style="max-width:300px;">
+        <option value="">-- Select --</option>
+    </select>
 </div>
-<div style="background:#1a1a2e; border-radius:10px; padding:20px; min-height:300px;">
-    <div id="termOutput" style="color:#e2e8f0; font-family:'Courier New',monospace; font-size:14px; white-space:pre-wrap; word-break:break-all; min-height:200px;">> Select a node and type a command...</div>
+<div class="card" style="background:#0d1117; padding:20px; min-height:300px;">
+    <div id="termOutput" style="color:#c9d1d9; font-family:'Courier New',monospace; font-size:14px; white-space:pre-wrap; word-break:break-all; min-height:200px;">> Select a node and type a command...</div>
     <div style="display:flex; gap:10px; margin-top:15px;">
-        <input type="text" id="cmdInput" placeholder="Enter command..." style="flex:1; padding:12px; border:1px solid #4a5568; border-radius:6px; background:#0f0f1a; color:#e2e8f0; font-family:monospace; outline:none;">
-        <button onclick="sendCommand()" style="padding:12px 25px; background:#4a6cf7; border:none; border-radius:6px; color:#fff; font-weight:600; cursor:pointer;">Run</button>
+        <input type="text" id="cmdInput" placeholder="Enter command..." style="flex:1;">
+        <button class="btn btn-info" onclick="sendCommand()">Run</button>
     </div>
 </div>
 <script>
