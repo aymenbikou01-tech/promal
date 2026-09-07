@@ -10,7 +10,7 @@ app.secret_key = os.urandom(32)
 
 # ===== بيانات الدخول =====
 USERNAME = "admin"
-PASSWORD_HASH = hashlib.sha256("SecurePass123".encode()).hexdigest()
+PASSWORD_HASH = hashlib.sha256("123".encode()).hexdigest()
 
 # ===== نظام القفل المتقدم =====
 failed_attempts = {}
