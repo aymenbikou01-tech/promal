@@ -1,0 +1,8 @@
+c2_ultimate/
+├── app.py                 (السيرڤر الرئيسي)
+├── requirements.txt       (المكتبات)
+├── templates/
+│   ├── login.html         (صفحة الدخول)
+│   ├── index.html         (الداشبورد)
+│   └── room.html          (الغرفة الخاصة)
+└── agent_ultimate.py      (الـ Agent المتطور)
