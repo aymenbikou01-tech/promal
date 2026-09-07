@@ -19,11 +19,11 @@ def index():
     <head>
         <title>B2B Server</title>
         <style>
-            body { background: #0a0a0a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-            .box { border: 2px solid #00ff00; padding: 40px; text-align: center; background: #000; }
+            body { background: #0a0a0a; color: #000000; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .box { border: 2px solid #f1ebf1; padding: 40px; text-align: center; background: #000; }
             h1 { font-size: 48px; margin: 0; }
-            .sub { color: #006600; font-size: 14px; margin-top: 10px; }
-        </style>
+            .sub { color: #960d0d; font-size: 14px; margin-top: 10px; }
+        </style
     </head>
     <body>
         <div class="box">
